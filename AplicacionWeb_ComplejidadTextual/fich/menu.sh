@@ -36,6 +36,42 @@ function apacheInstall()
 	fi 
 }
 
+###########################################################
+#     2) Activar y testear el servicio web Apache         #
+###########################################################
+function webApacheTest()
+{
+	# 1. Comunicar si el servicio web apache ya está arrancado y sino arrancarlo	
+	aux=$(service apache2 status | grep "Active: active")
+	aux2=$(service apache2 status | grep "Estado: instalado")
+	aux3=$aux$aux2
+	if [ -z "$aux3" ]
+	then 
+ 	  echo "instalando ..."
+ 	  sudo apt-get install apache2
+	else
+   	  echo "apache ya estaba instalado"
+    
+	fi 
+}
+
+###########################################################
+#         3) Crea un virtual host en el puerto 8080       #
+###########################################################
+function createvirtualhost()
+{
+	aux=$(aptitude show apache2 | grep "State: installed")
+	TODO
+}
+
+###########################################################
+#         4) Testea el virtual host                       #
+###########################################################
+function webVirtualApacheTest()
+{
+	aux=$(aptitude show apache2 | grep "State: installed")
+	TODO
+}
 
 
 ###########################################################
