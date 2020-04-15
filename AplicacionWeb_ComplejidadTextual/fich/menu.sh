@@ -99,6 +99,8 @@ function createvirtualhost()
 	# 2.2 	Adapt the new config files to our needs
 	#	For editing a file by bash the sed command can be used, where sed is a stream editor 
 	# 	In more detail, the sed's 'substitute' command can be used, which uses the following syntax: ‘s/regexp/replacement/flags’
+	# 	=> Helpful flag: g (apply the replacement to all matches to the regexp, not just the first)
+	# 	=> Important: The characters have to be escaped, e.g. "new line" -> "\n" or "/" -> "\/"
 
 	# 2.2.1 Change ": 80" to ": 8080" to indicate that we will access this virtualhost through this port
 	#	regexp: 80
@@ -106,11 +108,14 @@ function createvirtualhost()
 	sudo sed -i "s/80/8080/g" /etc/apache2/sites-available/erraztest.conf
 
 	# 2.2.2 Update the reference to the root directory to make sure it points to the right place
-	sudo sed -i "s/\/var\/www\/html\/\/var\/www\/html\/erraztest/g" /etc/apache2/sites-available/erraztest.conf
+	#	regexp:\/var\/www\/html
+	#	replacement: \/var\/www\/html\/erraztest
+	sudo sed -i "s/\/var\/www\/html/\/var\/www\/html\/erraztest/g" /etc/apache2/sites-available/erraztest.conf
 
 	# 2.2.3 Add a new section with some basic guidelines among which we have enabled the mod_rewrite module, necessary for rewriting urls 
 	#       (see Tutorial at https://blog.ahierro.es/como-configurar-virtual-hosts-en-apache-y-ubuntu/)
-	# Important: The characters have to be escaped, e.g. "new line" -> "\n" or "/" -> "\/"
+	#	regexp:<\/VirtualHost>
+	#	replacement: \<Directory \/var\/www\/html\/erraztest\>\nOptions Indexes FollowSymLinks MultiViews\nAllowOverride All\nOrder allow,deny\nallow from all\n<\/Directory>\n<\/VirtualHost>\n
 	sudo sed -i "s/<\/VirtualHost>/\<Directory \/var\/www\/html\/erraztest\>\nOptions Indexes FollowSymLinks MultiViews\nAllowOverride All\nOrder allow,deny\nallow from all\n<\/Directory>\n<\/VirtualHost>\n/g" /etc/apache2/sites-available/erraztest.conf
 	
 	
