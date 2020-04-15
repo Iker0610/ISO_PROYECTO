@@ -43,16 +43,44 @@ function webApacheTest()
 {
 	# 1. Comunicar si el servicio web apache ya está arrancado y sino arrancarlo	
 	aux=$(service apache2 status | grep "Active: active")
-	aux2=$(service apache2 status | grep "Estado: instalado")
-	aux3=$aux$aux2
-	if [ -z "$aux3" ]
+	if [ -z "$aux" ]
 	then 
- 	  echo "instalando ..."
- 	  sudo apt-get install apache2
+ 	  echo "Starting apache ..."
+ 	  sudo service apache2 start
+	  echo "Apache started"
 	else
-   	  echo "apache ya estaba instalado"
-    
-	fi 
+   	  echo "Apache is already running"
+    	fi 
+	sleep 1
+
+	# 2. Testear si el servicio apache2 está escuchando por el puerto 80 
+
+	# 2.1 Instala el paquete que contiene netstat en caso de no estar instalado.
+	aux=$(dpkg -s net-tools | grep "installed")
+	# dpkg-query -W -f='${Status}' net-tools 2>/dev/null | grep -c "ok installed" => returns 1 (installed) or 0 (not installed)
+	if [ -z "$aux" ]
+	then 
+ 	  echo "Installing net-tools ..."	#contains the netstat command
+ 	  sudo apt-get install net-tools
+	  echo "net-tools successfully installed"
+	else
+   	  echo "net-tools is already installed"
+    	fi 
+	sleep 1
+
+	#2.2 Saber el puerto por que está escuchando Apache/ Testear si el puerto está 80
+	puerto=$(sudo netstat -anp | grep apache| grep "0 :::80")
+	if [ ! -z "$puerto" ]
+	then 
+ 	  echo "Apache is listening to port 80..."		
+	  echo "To check if the default page “index.html” which is located in /var/www/html is displayed correctly, open the navigation with firefox http://127.0.0.1 o firefox http://localhost"
+	  echo "Opening Firefox..."
+	  firefox http://127.0.0.1
+	else
+   	  echo "Apache is not listening to port 80. Something went wrong"
+    	fi 
+	sleep 1
+	
 }
 
 ###########################################################
