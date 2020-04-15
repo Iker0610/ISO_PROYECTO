@@ -88,8 +88,33 @@ function webApacheTest()
 ###########################################################
 function createvirtualhost()
 {
-	aux=$(aptitude show apache2 | grep "State: installed")
-	TODO
+	# Step 1: Create the directory that will host the website
+	sudo mkdir /var/www/html/erraztest
+
+	# Step 2: Create the configuration file for the new virtual host
+
+	# 2.1 Use the default config and edit it afterwards
+	sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/erraztest.conf
+
+	# 2.2 	Adapt the new config files to our needs
+	#	For editing a file by bash the sed command can be used, where sed is a stream editor 
+	# 	In more detail, the sed's 'substitute' command can be used, which uses the following syntax: ‘s/regexp/replacement/flags’
+
+	# 2.2.1 Change ": 80" to ": 8080" to indicate that we will access this virtualhost through this port
+	#	regexp: 80
+	#	replacement: 8080
+	sudo sed -i "s/80/8080/g" /etc/apache2/sites-available/erraztest.conf
+
+	# 2.2.2 Update the reference to the root directory to make sure it points to the right place
+	sudo sed -i "s/\/var\/www\/html\/\/var\/www\/html\/erraztest/g" /etc/apache2/sites-available/erraztest.conf
+
+	# 2.2.3 Add a new section with some basic guidelines among which we have enabled the mod_rewrite module, necessary for rewriting urls 
+	#       (see Tutorial at https://blog.ahierro.es/como-configurar-virtual-hosts-en-apache-y-ubuntu/)
+	# Important: The characters have to be escaped, e.g. "new line" -> "\n" or "/" -> "\/"
+	sudo sed -i "s/<\/VirtualHost>/\<Directory \/var\/www\/html\/erraztest\>\nOptions Indexes FollowSymLinks MultiViews\nAllowOverride All\nOrder allow,deny\nallow from all\n<\/Directory>\n<\/VirtualHost>\n/g" /etc/apache2/sites-available/erraztest.conf
+	
+	
+	
 }
 
 ###########################################################
