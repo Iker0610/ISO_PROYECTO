@@ -147,8 +147,22 @@ function createvirtualhost()
 ###########################################################
 function webVirtualApacheTest()
 {
-	aux=$(aptitude show apache2 | grep "State: installed")
-	TODO
+	# Step 1: Copy the default page index.html located in /var/www/html into /var/www/html/erraztest.
+	sudo cp /var/www/html/index.html /var/www/html/erraztest/index.html
+	
+	# Step 2: Check if Apache is listening to port 8080 
+	puerto=$(sudo netstat -anp | grep apache| grep "0 :::8080")
+	if [ ! -z "$puerto" ]
+	then 
+ 	  echo "Apache is listening to port 8080..."		
+	else
+   	  echo "Apache is not listening to port 8080. Something went wrong"
+    	fi 
+	sleep 1
+
+	# Step 3: To check if the default page “index.html” which is located in /var/www/html/erraztest is displayed correctly, open the navigation with "firefox http://127.0.0.1:8080 "
+	echo "Opening Firefox..."
+	firefox http://127.0.0.1:8080
 }
 
 
