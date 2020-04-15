@@ -100,6 +100,7 @@ function createvirtualhost()
 	#	For editing a file by bash the sed command can be used, where sed is a stream editor 
 	# 	In more detail, the sed's 'substitute' command can be used, which uses the following syntax: ‘s/regexp/replacement/flags’
 	# 	=> Helpful flag: g (apply the replacement to all matches to the regexp, not just the first)
+	#	=> -i: Edit files in place (long argument name: --in-place);  optional: saving backups with the specified extension.
 	# 	=> Important: The characters have to be escaped, e.g. "new line" -> "\n" or "/" -> "\/"
 
 	# 2.2.1 Change ": 80" to ": 8080" to indicate that we will access this virtualhost through this port
@@ -118,7 +119,26 @@ function createvirtualhost()
 	#	replacement: \<Directory \/var\/www\/html\/erraztest\>\nOptions Indexes FollowSymLinks MultiViews\nAllowOverride All\nOrder allow,deny\nallow from all\n<\/Directory>\n<\/VirtualHost>\n
 	sudo sed -i "s/<\/VirtualHost>/\<Directory \/var\/www\/html\/erraztest\>\nOptions Indexes FollowSymLinks MultiViews\nAllowOverride All\nOrder allow,deny\nallow from all\n<\/Directory>\n<\/VirtualHost>\n/g" /etc/apache2/sites-available/erraztest.conf
 	
+	# Step 3: Open the proper port in Apache by editing the /etc/apache2/ports.conf file (if it is not yet opened)
+	aux=$(grep "Listen 8080" /etc/apache2/ports.conf)
+	if [ -z "$aux" ]
+	then 
+ 	  echo "Open port 8080 in Apache ..."
+ 	  sudo sed -i "s/Listen 80/Listen 80\nListen 8080/g" /etc/apache2/ports.conf
+	  echo "Port 8080 successfully opened"
+	else
+   	  echo "Apache is already listening to port 8080"
+    	fi 
+	sleep 1
+
+	# Step 4: Enable the new virtualhost
+
+	# 4.1 Create a symbolic link of the config in the sites-available directory in the sites-enabled directory (with a2ensite)
+	cd /etc/apache2/sites-available
+	sudo a2ensite erraztest.conf
 	
+	# 4.2 Restart Apache	
+	sudo service apache2 restart
 	
 }
 
