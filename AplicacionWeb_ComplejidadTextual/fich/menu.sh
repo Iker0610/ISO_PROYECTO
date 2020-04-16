@@ -36,7 +36,40 @@ function apacheInstall()
 	fi 
 }
 
+###########################################################
+#                     5) INSTALL PHP                      #
+###########################################################
 
+function phpInstall(){
+
+	aux = $(aptitude show php | grep "State: installed")
+	aux2 = $(aptitude show php | grep "Estado: instalado")
+	
+	aux3 = $aux$aux2
+	
+	
+	if [ -z "$aux3" ]
+	then
+		echo "installing..."
+		sudo apt install php libapache2-mod-php
+		sudo apt install php-cgi
+		#sudo apt install php-cli ?
+		#sudo apt install php-mysql ?
+		#sudo apt install php-pgsql ?
+		
+		#Verify if the files exist
+		if [ ! -d /etc/apache2/mods-enabled/php7.0.conf && ! -d /etc/apache2/mods-enabled/php7.0.load]
+			#Enable the module php
+			a2enmod php
+		fi
+		
+		#Restart Apache2
+		sudo systemctl restart apache2.service
+		
+	else
+		echo "PHP is already installed"
+	fi
+}
 
 ###########################################################
 #                     12) SALIR                          #
