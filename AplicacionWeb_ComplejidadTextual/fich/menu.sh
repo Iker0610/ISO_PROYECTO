@@ -36,6 +36,26 @@ function apacheInstall()
 	fi 
 }
 
+###########################################################
+#                     10) Visualizar Logs                 #
+###########################################################
+
+function viendoLogs()
+{
+	
+	archivo=/var/log/apache2/error.log #Save the path to the errors
+	
+	if [test -e $archivo && test -s &archivo]; #if the file error.log exists and its size isn't 0
+	then
+	  cat $archivo #read what's in it
+	else
+	  echo "El archivo no existe" #print "The file does not exist"
+	fi
+		
+}
+
+
+
 
 
 ###########################################################
