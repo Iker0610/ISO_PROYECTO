@@ -42,32 +42,66 @@ function apacheInstall()
 
 function phpInstall(){
 
-	aux = $(aptitude show php | grep "State: installed")
-	aux2 = $(aptitude show php | grep "Estado: instalado")
+	aux=$(aptitude show php | grep "State: installed")
+	aux2=$(aptitude show php | grep "Estado: instalado")
 	
-	aux3 = $aux$aux2
+	aux3=$aux$aux2
 	
 	
 	if [ -z "$aux3" ]
 	then
-		echo "installing..."
+		echo "Installing..."
 		sudo apt install php libapache2-mod-php
+		sudo apt install php-cli
 		sudo apt install php-cgi
-		#sudo apt install php-cli ?
 		#sudo apt install php-mysql ?
 		#sudo apt install php-pgsql ?
-		
 		#Verify if the files exist
+		echo "Verifying files..."
 		if [ ! -d /etc/apache2/mods-enabled/php7.0.conf && ! -d /etc/apache2/mods-enabled/php7.0.load]
 			#Enable the module php
 			a2enmod php
 		fi
 		
 		#Restart Apache2
+		echo "Restarting apache..."
 		sudo systemctl restart apache2.service
 		
+		echo "Installed"
 	else
 		echo "PHP is already installed"
+	fi
+}
+
+###########################################################
+#                     6) TEST PHP						#
+###########################################################
+
+function phpTest(){
+
+	echo "Creando fichero test.php..."
+	cd /var/www/html/erraztest
+	sudo touch test.php
+	sudo echo "<?php phpinfo(); ?>" > test.php
+	
+	#Comparamos test.php y index.html:
+	echo "Comprobando propietarios y permisos..."
+
+	#Nos aseguranmos que tienen el mismo propietario
+	propietarioHTML=$(stat --format %U index.html)
+	sudo chown "$propietarioHTML" test.php
+	
+	#Comprobamos los permisos:
+	permisosPHP=$(stat --format %A)
+	permisosHTML=$(stat --format %A)
+	if [ "$permisosPHP" = "$permisosHTML" ]
+		echo "Permisos comprobados"
+		
+		#Abrimos el test.php con el navegador
+		echo "Abriendo con firefox..."
+		firefox http://127.0.0.1:8080/test.php
+	else
+		echo "los ficheros test.php y index.html no tienen los mismos permisos"
 	fi
 }
 
