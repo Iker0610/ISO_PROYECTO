@@ -84,25 +84,22 @@ function phpTest(){
 	sudo touch test.php
 	sudo echo "<?php phpinfo(); ?>" > test.php
 	
-	#Comparamos test.php y index.html:
-	echo "Comprobando propietarios y permisos..."
-
-	#Nos aseguranmos que tienen el mismo propietario
-	propietarioHTML=$(stat --format %U index.html)
-	sudo chown "$propietarioHTML" test.php
+	#Test.php y index.html:
 	
-	#Comprobamos los permisos:
-	permisosPHP=$(stat --format %A)
-	permisosHTML=$(stat --format %A)
-	if [ "$permisosPHP" = "$permisosHTML" ]
-		echo "Permisos comprobados"
-		
-		#Abrimos el test.php con el navegador
-		echo "Abriendo con firefox..."
-		firefox http://127.0.0.1:8080/test.php
-	else
-		echo "los ficheros test.php y index.html no tienen los mismos permisos"
-	fi
+	#Nos aseguranmos que tienen el mismo propietario
+	echo "Comprobando propietarios..."
+	propietarioHTML=$(stat --format %U index.html)
+	sudo chown $propietarioHTML test.php
+	
+	#Nos aseguramos que tienen los mismos permisos:
+	echo "Comprobando permisos..."
+	permisosHTML=$(stat --format %a index.html)
+	sudo chmod $permisosHTML test.php
+	
+	#Abrimos el test.php con el navegador
+	echo "Abriendo con firefox..."
+	firefox http://127.0.0.1:8080/test.php
+	
 }
 
 ###########################################################
