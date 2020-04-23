@@ -47,7 +47,7 @@ function viendoLogs()
 	
 	if [test -e $archivo && test -s &archivo]; #if the file error.log exists and its size isn't 0
 	then
-	  cat $archivo #read what's in it
+	  tail $arc archivo #print the last 10 lines of the file
 	else
 	  echo "El archivo no existe" #print "The file does not exist"
 	fi
