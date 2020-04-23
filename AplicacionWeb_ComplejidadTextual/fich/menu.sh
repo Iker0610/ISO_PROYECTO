@@ -45,7 +45,7 @@ function viendoLogs()
 	
 	archivo=/var/log/apache2/error.log #Save the path to the errors
 	
-	if [test -e $archivo && test -s &archivo]; #if the file error.log exists and its size isn't 0
+	if [ test -e $archivo -a test -s &archivo ] #if the file error.log exists and its size isn't 0
 	then
 	  tail $arc archivo #print the last 10 lines of the file
 	else
@@ -54,8 +54,49 @@ function viendoLogs()
 		
 }
 
+###########################################################
+#       11) Controlar los intentos de conexión de ssh      #
+###########################################################
 
+function gestionarlogs()
+{
 
+touch /tmp/logscomprimidos.txt
+touch /tmp/logs.txt
+touch /tmp/logsfail.txt
+touch /tmp/logsok.txt
+
+cd /var/log
+
+archivoscomprimidos = "/tmp/logscomprimidos.txt"
+archivoslogs = "/tmp/logs.txt"
+
+cat /var/log/auth.log > $archivoslogs
+cat /var/log/auth.log.0 > $archivoslogs
+zcat auth.log.*.gz > $archivoscomprimidos
+
+cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt #guardamos los fails en logsfail.txt separados por @
+cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt #guardamos los accepted en logsok.txt separados por @
+echo "los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
+
+for linea in `less /tmp/logsfail.txt`
+do
+usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
+fecha=`echo $linea | cut -d "@" -f1,2,3`
+echo "Status: [fail] Accaunt name: $usuario Date: $fecha\n"
+done
+
+for linea in `less /tmp/logsok.txt`
+do
+usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
+fecha=`echo $linea | cut -d "@" -f1,2,3`
+echo "Status: [accept] Accaunt name: $usuario Date: $fecha\n"
+done
+rm /tmp/logscomprimidos.txt
+rm /tmp/logs.txt
+rm /tmp/logsfail.txt
+rm /tmp/logsok.txt
+}
 
 
 ###########################################################
