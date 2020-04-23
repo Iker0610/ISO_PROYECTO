@@ -66,18 +66,20 @@ touch /tmp/logs.txt
 touch /tmp/logsfail.txt
 touch /tmp/logsok.txt
 
-cd /var/log
 
 archivoscomprimidos = "/tmp/logscomprimidos.txt"
 archivoslogs = "/tmp/logs.txt"
 
 cat /var/log/auth.log > $archivoslogs
 cat /var/log/auth.log.0 > $archivoslogs
-zcat auth.log.*.gz > $archivoscomprimidos
+zcat ls auth.log.*.gz > $archivoscomprimidos
 
 cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt #guardamos los fails en logsfail.txt separados por @
+cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt
 cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt #guardamos los accepted en logsok.txt separados por @
-echo "los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
+cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt
+
+echo "Los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
 
 for linea in `less /tmp/logsfail.txt`
 do
