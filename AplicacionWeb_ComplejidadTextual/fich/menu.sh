@@ -85,15 +85,16 @@ for linea in `less /tmp/logsfail.txt`
 do
 usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
 fecha=`echo $linea | cut -d "@" -f1,2,3`
-echo "Status: [fail] Accaunt name: $usuario Date: $fecha\n"
+echo "Status: [fail] Account name: $usuario Date: $fecha\n"
 done
 
 for linea in `less /tmp/logsok.txt`
 do
 usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
 fecha=`echo $linea | cut -d "@" -f1,2,3`
-echo "Status: [accept] Accaunt name: $usuario Date: $fecha\n"
+echo "Status: [accept] Account name: $usuario Date: $fecha\n"
 done
+
 rm /tmp/logscomprimidos.txt
 rm /tmp/logs.txt
 rm /tmp/logsfail.txt
