@@ -21,7 +21,6 @@ function desinstalar()
 	sudo rm -rf /var/www/html/*
 }
 
-
 ###########################################################
 #                  1) INSTALL APACHE                     #
 ###########################################################
@@ -44,6 +43,7 @@ function apacheInstall()
 ###########################################################
 #     2) Activar y testear el servicio web Apache         #
 ###########################################################
+
 function webApacheTest()
 {
 	# 1. Comunicar si el servicio web apache ya está arrancado y sino arrancarlo	
@@ -91,6 +91,7 @@ function webApacheTest()
 ###########################################################
 #         3) Crea un virtual host en el puerto 8080       #
 ###########################################################
+
 function createvirtualhost()
 {
 	# Step 1: Create the directory that will host the website
@@ -150,6 +151,7 @@ function createvirtualhost()
 ###########################################################
 #         4) Testea el virtual host                       #
 ###########################################################
+
 function webVirtualApacheTest()
 {
 	# Step 1: Copy the default page index.html located in /var/www/html into /var/www/html/erraztest.
@@ -168,6 +170,72 @@ function webVirtualApacheTest()
 	# Step 3: To check if the default page “index.html” which is located in /var/www/html/erraztest is displayed correctly, open the navigation with "firefox http://127.0.0.1:8080 "
 	echo "Opening Firefox..."
 	firefox http://127.0.0.1:8080
+}
+
+###########################################################
+#                     5) INSTALL PHP                      #
+###########################################################
+
+function phpInstall(){
+
+	aux=$(aptitude show php | grep "State: installed")
+	aux2=$(aptitude show php | grep "Estado: instalado")
+	
+	aux3=$aux$aux2
+	
+	
+	if [ -z "$aux3" ]
+	then
+		echo "Installing..."
+		sudo apt install php libapache2-mod-php
+		sudo apt install php-cli
+		sudo apt install php-cgi
+		#sudo apt install php-mysql ?
+		#sudo apt install php-pgsql ?
+		#Verify if the files exist
+		echo "Verifying files..."
+		if [ ! -d /etc/apache2/mods-enabled/php7.0.conf && ! -d /etc/apache2/mods-enabled/php7.0.load]
+			#Enable the module php
+			a2enmod php
+		fi
+		
+		#Restart Apache2
+		echo "Restarting apache..."
+		sudo systemctl restart apache2.service
+		
+		echo "Installed"
+	else
+		echo "PHP is already installed"
+	fi
+}
+
+###########################################################
+#                     6) TEST PHP						#
+###########################################################
+
+function phpTest(){
+
+	echo "Creando fichero test.php..."
+	cd /var/www/html/erraztest
+	sudo touch test.php
+	sudo echo "<?php phpinfo(); ?>" > test.php
+	
+	#Test.php y index.html:
+	
+	#Nos aseguranmos que tienen el mismo propietario
+	echo "Comprobando propietarios..."
+	propietarioHTML=$(stat --format %U index.html)
+	sudo chown $propietarioHTML test.php
+	
+	#Nos aseguramos que tienen los mismos permisos:
+	echo "Comprobando permisos..."
+	permisosHTML=$(stat --format %a index.html)
+	sudo chmod $permisosHTML test.php
+	
+	#Abrimos el test.php con el navegador
+	echo "Abriendo con firefox..."
+	firefox http://127.0.0.1:8080/test.php
+	
 }
 
 ###########################################################
@@ -191,7 +259,6 @@ function crearEntornoVirtualPython3()
 	echo "creando entorno virtual en /var/www/html/erraztest/env..."
 	sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
 }
-
 
 ###########################################################
 #      8) INSTALL PACKAGES IN THE VIRTUAL ENVIRONMENT     #
@@ -244,7 +311,6 @@ function instalarPaquetesEntornoVirtualPythonyAplicacion()
 	./webprocess.sh textos/english.doc.txt		# Execute 'webprocess.sh' script
 }
 
-
 ###########################################################
 #               9) VISUALIZAR APLICACIÓN                  #
 ###########################################################
@@ -253,6 +319,71 @@ function visualizarAplicacion()
 {
 	# (I don't know if is just this or...)
 	firefox http://127.0.0.1:8080/index.php
+}
+
+###########################################################
+#                     10) Visualizar Logs                 #
+###########################################################
+
+function viendoLogs()
+{
+	
+	archivo=/var/log/apache2/error.log #Save the path to the errors
+	
+	if [ test -e $archivo -a test -s &archivo ] #if the file error.log exists and its size isn't 0
+	then
+	  tail $archivo #print the last 10 lines of the file
+	else
+	  echo "El archivo no existe" #print "The file does not exist"
+	fi
+
+}
+
+###########################################################
+#       11) Controlar los intentos de conexión de ssh      #
+###########################################################
+
+function gestionarlogs()
+{
+
+touch /tmp/logscomprimidos.txt
+touch /tmp/logs.txt
+touch /tmp/logsfail.txt
+touch /tmp/logsok.txt
+
+
+archivoscomprimidos = "/tmp/logscomprimidos.txt"
+archivoslogs = "/tmp/logs.txt"
+
+cat /var/log/auth.log > $archivoslogs
+cat /var/log/auth.log.0 > $archivoslogs
+zcat ls auth.log.*.gz > $archivoscomprimidos
+
+cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt #guardamos los fails en logsfail.txt separados por @
+cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt
+cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt #guardamos los accepted en logsok.txt separados por @
+cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt
+
+echo "Los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
+
+for linea in `less /tmp/logsfail.txt`
+do
+usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
+fecha=`echo $linea | cut -d "@" -f1,2,3`
+echo "Status: [fail] Account name: $usuario Date: $fecha\n"
+done
+
+for linea in `less /tmp/logsok.txt`
+do
+usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
+fecha=`echo $linea | cut -d "@" -f1,2,3`
+echo "Status: [accept] Account name: $usuario Date: $fecha\n"
+done
+
+rm /tmp/logscomprimidos.txt
+rm /tmp/logs.txt
+rm /tmp/logsfail.txt
+rm /tmp/logsok.txt
 }
 
 ###########################################################
@@ -309,4 +440,4 @@ do
 done 
 
 echo "Fin del Programa" 
-exit 0 
+exit 0
