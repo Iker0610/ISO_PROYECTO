@@ -194,9 +194,10 @@ function phpInstall(){
 		#sudo apt install php-pgsql ?
 		#Verify if the files exist
 		echo "Verifying files..."
-		if [ ! -d /etc/apache2/mods-enabled/php7.0.conf && ! -d /etc/apache2/mods-enabled/php7.0.load]
+		if [ ! -d /etc/apache2/mods-enabled/php7.2.conf ] && [ ! -d /etc/apache2/mods-enabled/php7.2.load ]
+		then
 			#Enable the module php
-			a2enmod php
+			a2enmod php7.2
 		fi
 		
 		#Restart Apache2
@@ -210,7 +211,7 @@ function phpInstall(){
 }
 
 ###########################################################
-#                     6) TEST PHP						#
+#                     6) TEST PHP                         #
 ###########################################################
 
 function phpTest(){
@@ -218,9 +219,10 @@ function phpTest(){
 	echo "Creando fichero test.php..."
 	cd /var/www/html/erraztest
 	sudo touch test.php
-	sudo echo "<?php phpinfo(); ?>" > test.php
+	echo "Introducimos el siguiente código:"
+	echo "<?php phpinfo(); ?>" | sudo tee test.php
 	
-	#Test.php y index.html:
+	#test.php y index.html:
 	
 	#Nos aseguranmos que tienen el mismo propietario
 	echo "Comprobando propietarios..."
@@ -244,12 +246,10 @@ function phpTest(){
 
 function crearEntornoVirtualPython3()
 {
-	#Post: This function creates a new Python3 environment in /var/www/html/erraztest
-	#			This way the application is able to have its own Python library versions
-	#			regardless the ones that are installed (or not) in the system
+	# Post:	This function creates a new Python3 environment in /var/www/html/erraztest
+	#	This way the application is able to have its own Python library versions
+	#	regardless the ones that are installed (or not) in the system
 
-
-	# TODO(¿?): CHECK IF VIRTUALENV IS ALREADY INSTALLED AND/OR CREATED
 
 	# Install the virtualenv
 	echo "instalando el entorno virtual..."
@@ -260,56 +260,53 @@ function crearEntornoVirtualPython3()
 	sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
 }
 
+
 ###########################################################
 #      8) INSTALL PACKAGES IN THE VIRTUAL ENVIRONMENT     #
 ###########################################################
 
 function instalarPaquetesEntornoVirtualPythonyAplicacion()
 {
-	# TODO: Show errors, permissions, file ownership ... 
-
 	########## INSTALL PACKAGES ##########
-
-	sudo su # Change to "root" mode
-
-	# Install necesary Ubuntu packages - (in the virtualenv or in system¿?)
-	apt install dos2unix 		# Install dos2unix
-	apt install python3-pip   	# Install pip
+	pwd
+	# Install necesary Ubuntu packages
+	sudo apt install dos2unix 	# Install dos2unix
+	sudo apt install python3-pip   	# Install pip
 
 	# Install python packages in the virtual env. via PIP
 
 	# Activate the virtual environment
-	cd /var/www/html/erraztest/python3envmetrix 	# Move to the virtualenv folder
-	source bin/activate								# Activate the environment executing activate (script)
+	# Move to the virtualenv folder
+	source /var/www/html/erraztest/python3envmetrix/bin/activate	# Activate the environment executing activate (script)
 
 	# Install python packages with PIP inside the virtual environment
-	pip install numpy
-	pip install nltk
-	pip install argparse
+	sudo -H pip3 install numpy
+	sudo -H pip3 install nltk
+	sudo -H pip3 install argparse
 
 	# Deactivate the virtual environment
 	deactivate
 
 
 	########## INSTALL AND TEST APLICATION ##########
-	
+	pwd
 	# Copy application files to /var/www/html/erraztest/
-	cp index.php /var/www/html/erraztest/
-	cp webprocess.sh /var/www/html/erraztest/
-	cp complejidadtextual.py /var/www/html/erraztest/
-	cp processing.gif /var/www/html/erraztest/
+	sudo cp index.php /var/www/html/erraztest/
+	sudo cp webprocess.sh /var/www/html/erraztest/
+	sudo cp complejidadtextual.py /var/www/html/erraztest/
+	sudo cp processing.gif /var/www/html/erraztest/
 
 	# Copy english.doc.txt for test
-	cp  english.doc.txt /var/www/html/erraztest/textos
-
+	sudo cp -r textos /var/www/html/erraztest/
 	# Give file ownership to www-data (user and group)
-	chown -R www-data:www-data /var/www 
+	sudo chown -R www-data:www-data /var/www 
 
 	# Test the application as www-data user
-	su - www-data -s /bin/bash			# Change to 'www-data' user and run bash as shell
-	cd /var/www/html/erraztest			# Change folder to /var/www/html/erraztest
-	./webprocess.sh textos/english.doc.txt		# Execute 'webprocess.sh' script
+	cd /var/www/html/erraztest									# Change folder to /var/www/html/erraztest
+	sudo -u www-data bash webprocess.sh textos/english.doc.txt	# Execute 'webprocess.sh' script with 'www-data' user
+	############## ERROR en complejidadtextual.py en "import nltk"
 }
+
 
 ###########################################################
 #               9) VISUALIZAR APLICACIÓN                  #
@@ -440,4 +437,4 @@ do
 done 
 
 echo "Fin del Programa" 
-exit 0
+exit 0 
