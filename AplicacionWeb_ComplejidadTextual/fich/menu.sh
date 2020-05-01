@@ -140,8 +140,7 @@ function createvirtualhost()
 	# Step 4: Enable the new virtualhost
 
 	# 4.1 Create a symbolic link of the config in the sites-available directory in the sites-enabled directory (with a2ensite)
-	cd /etc/apache2/sites-available
-	sudo a2ensite erraztest.conf
+	sudo a2ensite /etc/apache2/sites-available/erraztest.conf
 	
 	# 4.2 Restart Apache	
 	sudo service apache2 restart
@@ -217,10 +216,9 @@ function phpInstall(){
 function phpTest(){
 
 	echo "Creando fichero test.php..."
-	cd /var/www/html/erraztest
-	sudo touch test.php
+	sudo touch /var/www/html/erraztest/test.php
 	echo "Introducimos el siguiente código:"
-	echo "<?php phpinfo(); ?>" | sudo tee test.php
+	echo "<?php phpinfo(); ?>" | sudo tee /var/www/html/erraztest/test.php
 	
 	#test.php y index.html:
 	
