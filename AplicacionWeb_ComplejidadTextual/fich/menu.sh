@@ -140,7 +140,7 @@ function createvirtualhost()
 	# Step 4: Enable the new virtualhost
 
 	# 4.1 Create a symbolic link of the config in the sites-available directory in the sites-enabled directory (with a2ensite)
-	sudo a2ensite /etc/apache2/sites-available/erraztest.conf
+	sudo a2ensite erraztest.conf
 	
 	# 4.2 Restart Apache	
 	sudo service apache2 restart
@@ -224,13 +224,13 @@ function phpTest(){
 	
 	#Nos aseguranmos que tienen el mismo propietario
 	echo "Comprobando propietarios..."
-	propietarioHTML=$(stat --format %U index.html)
-	sudo chown $propietarioHTML test.php
+	propietarioHTML=$(stat --format %U /var/www/html/erraztest/index.html)
+	sudo chown $propietarioHTML /var/www/html/erraztest/test.php
 	
 	#Nos aseguramos que tienen los mismos permisos:
 	echo "Comprobando permisos..."
-	permisosHTML=$(stat --format %a index.html)
-	sudo chmod $permisosHTML test.php
+	permisosHTML=$(stat --format %a /var/www/html/erraztest/index.html)
+	sudo chmod $permisosHTML /var/www/html/erraztest/test.php
 	
 	#Abrimos el test.php con el navegador
 	echo "Abriendo con firefox..."
