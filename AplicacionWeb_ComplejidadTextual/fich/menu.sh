@@ -252,12 +252,14 @@ function crearEntornoVirtualPython3()
 
 
 	# Install the virtualenv
-	echo "instalando el entorno virtual..."
+	echo "Instalando el entorno virtual..."
 	sudo apt-get install python-virtualenv virtualenv
+	echo "Entono virtual instalado"
 
 	# Create a new virtual environment for Python3 in the folder: /var/www/html/erraztest
 	echo "creando entorno virtual en /var/www/html/erraztest/env..."
 	sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
+	echo "Entono virtual creado en /var/www/html/erraztest/env"
 }
 
 
@@ -268,29 +270,37 @@ function crearEntornoVirtualPython3()
 function instalarPaquetesEntornoVirtualPythonyAplicacion()
 {
 	########## INSTALL PACKAGES ##########
-	pwd
+
 	# Install necesary Ubuntu packages
+	echo 'Instalando pip y dos2unix'
 	sudo apt install dos2unix 	# Install dos2unix
 	sudo apt install python3-pip   	# Install pip
+	echo 'Insalación completada'
+
+    # Give file ownership to www-data (user and group)
+    sudo chown -R www-data:www-data /var/www
 
 	# Install python packages in the virtual env. via PIP
+	# 1- Activate the virtual environment
+	# 2- Install packages
+	# 3- Deactivate virtualenv
 
-	# Activate the virtual environment
-	# Move to the virtualenv folder
-	source /var/www/html/erraztest/python3envmetrix/bin/activate	# Activate the environment executing activate (script)
-
-	# Install python packages with PIP inside the virtual environment
-	sudo -H pip3 install numpy
-	sudo -H pip3 install nltk
-	sudo -H pip3 install argparse
-
-	# Deactivate the virtual environment
+	sudo su www-data -s /bin/bash <<'EOF'
+	echo 'Activando el entorno virtual'
+	source /var/www/html/erraztest/python3envmetrix/bin/activate
+	echo 'Instalando librerías de python...'
+	pip3 install numpy
+	pip3 install nltk
+	pip3 install argparse
+    echo 'Instalación completada'
+	echo 'Desactiando entorno virtual'
 	deactivate
-
+EOF
 
 	########## INSTALL AND TEST APLICATION ##########
-	pwd
+
 	# Copy application files to /var/www/html/erraztest/
+	echo 'Instalando aplicación en /var/www/html/erraztest/'
 	sudo cp index.php /var/www/html/erraztest/
 	sudo cp webprocess.sh /var/www/html/erraztest/
 	sudo cp complejidadtextual.py /var/www/html/erraztest/
@@ -298,14 +308,15 @@ function instalarPaquetesEntornoVirtualPythonyAplicacion()
 
 	# Copy english.doc.txt for test
 	sudo cp -r textos /var/www/html/erraztest/
-	# Give file ownership to www-data (user and group)
-	sudo chown -R www-data:www-data /var/www 
+
+    # Give file ownership to www-data (user and group)
+    sudo chown -R www-data:www-data /var/www
+
+	echo 'Aplicación instalada correctamente'
 
 	# Test the application as www-data user
-	cd /var/www/html/erraztest									# Change folder to /var/www/html/erraztest
-	sudo -u www-data bash webprocess.sh textos/english.doc.txt	# Execute 'webprocess.sh' script with 'www-data' user
-	############## ERROR en complejidadtextual.py en "import nltk"
-}
+	sudo su www-data -s /bin/bash -c /var/www/html/erraztest/webprocess.sh /var/www/html/erraztest/textos/english.doc.txt
+ }
 
 
 ###########################################################
@@ -314,7 +325,6 @@ function instalarPaquetesEntornoVirtualPythonyAplicacion()
 
 function visualizarAplicacion()
 {
-	# (I don't know if is just this or...)
 	firefox http://127.0.0.1:8080/index.php
 }
 
@@ -327,7 +337,7 @@ function viendoLogs()
 	
 	archivo=/var/log/apache2/error.log #Save the path to the errors
 	
-	if [ test -e $archivo -a test -s &archivo ] #if the file error.log exists and its size isn't 0
+	if [ -s $archivo ]  #if the file error.log exists and its size isn't 0
 	then
 	  tail $archivo #print the last 10 lines of the file
 	else
@@ -349,8 +359,8 @@ touch /tmp/logsfail.txt
 touch /tmp/logsok.txt
 
 
-archivoscomprimidos = "/tmp/logscomprimidos.txt"
-archivoslogs = "/tmp/logs.txt"
+archivoscomprimidos="/tmp/logscomprimidos.txt"
+archivoslogs="/tmp/logs.txt"
 
 cat /var/log/auth.log > $archivoslogs
 cat /var/log/auth.log.0 > $archivoslogs
