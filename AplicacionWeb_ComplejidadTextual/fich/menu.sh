@@ -468,6 +468,7 @@ function gestionarLogs()
 {
     printf "${TITLE}11 Controlar los intentos de conexión de ssh${NC}\n\n\n"
 
+    #Create files to save the different logs in them
     touch /tmp/logscomprimidos.txt
     touch /tmp/logs.txt
     touch /tmp/logsfail.txt
@@ -480,28 +481,34 @@ function gestionarLogs()
     cat /var/log/auth.log > $archivoslogs
     cat /var/log/auth.log.0 > $archivoslogs
     zcat `ls auth.log.*.gz` > $archivoscomprimidos
-
-    cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt #guardamos los fails en logsfail.txt separados por @
-    cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt
-    cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt #guardamos los accepted en logsok.txt separados por @
-    cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt
+    #The fails will be save in /tmp/logsfail.txt, making sure first that every word is separated by one space only, and then we replace the space with @.
+    cat $archivoslogs | grep "sshd" | grep "Failed password" |tr -s " "|tr " " "@" > /tmp/logsfail.txt
+    cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr -s " "|tr " " "@" > /tmp/logsfail.txt
+    #The successful logs will be save in /tmp/logsok.txt, making sure first that every word is separated by one space only, and then we replace the space with @.
+    cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr -s " "|tr " " "@" > /tmp/logsok.txt
+    cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr -s " "|tr " " "@" > /tmp/logsok.txt
 
     echo "Los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
 
+    #Print the fails
     for linea in `less /tmp/logsfail.txt`
     do
-    usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
+    #The words are separated by @ and we take the field wanted for usuario and fecha
+    usuario=`echo $linea | cut -d "@" -f9`
     fecha=`echo $linea | cut -d "@" -f1,2,3`
     echo "Status: [fail] Account name: $usuario Date: $fecha\n"
     done
 
+    #Print the successful logs
     for linea in `less /tmp/logsok.txt`
     do
+    #The words are separated by @ and we take the field wanted for usuario and fecha
     usuario=`echo $linea | cut -d "@" -f9`#separado por @ solo seleccionar el field 9
     fecha=`echo $linea | cut -d "@" -f1,2,3`
     echo "Status: [accept] Account name: $usuario Date: $fecha\n"
     done
 
+    #Remove the files we have created
     rm /tmp/logscomprimidos.txt
     rm /tmp/logs.txt
     rm /tmp/logsfail.txt
@@ -567,4 +574,4 @@ do
 done 
 
 echo "Fin del Programa" 
-exit 0 
+exit 0
