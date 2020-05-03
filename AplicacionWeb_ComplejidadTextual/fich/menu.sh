@@ -15,9 +15,9 @@ EXE_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Colors for echo.
 # Use: printf "${ERROR}THIS IS AN ERROR MESSAGE IN RED ${NC}this is a normal message on default color\n"
 TITLE='\033[1;34m'
-ERROR='\033[0;31mERROR- \033[0m'
-OK='\033[0;32mOK- \033[0m'
-WARNING='\033[0;33mAVISO- \033[0m'
+ERROR='\033[1;31mERROR- \033[0m'
+OK='\033[1;32mOK- \033[0m'
+WARNING='\033[1;33mAVISO- \033[0m'
 NC='\033[0m' # No Color
 
 ############################################################
@@ -441,7 +441,7 @@ function viendoLogs()
 #       11) Controlar los intentos de conexión de ssh      #
 ###########################################################
 
-function gestionarlogs()
+function gestionarLogs()
 {
     printf "${TITLE}11 Controlar los intentos de conexión de ssh${NC}\n\n\n"
 
@@ -457,13 +457,13 @@ function gestionarlogs()
 
     cat /var/log/auth.log > $archivoslogs
     cat /var/log/auth.log.0 > $archivoslogs
-    zcat ls auth.log.*.gz > $archivoscomprimidos
+    zcat `ls auth.log.*.gz` > $archivoscomprimidos
     #The fails will be save in /tmp/logsfail.txt, making sure first that every word is separated by one space only, and then we replace the space with @.
-    cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt 
-    cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt
+    cat $archivoslogs | grep "sshd" | grep "Failed password" |tr -s " "|tr " " "@" > /tmp/logsfail.txt 
+    cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr -s " "|tr " " "@" > /tmp/logsfail.txt
     #The successful logs will be save in /tmp/logsok.txt, making sure first that every word is separated by one space only, and then we replace the space with @.
-    cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt 
-    cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr ' '|tr ' ' '@' > /tmp/logsok.txt
+    cat $archivoslogs | grep "sshd" | grep "Accepted password" |tr -s " "|tr " " "@" > /tmp/logsok.txt 
+    cat $archivoscomprimidos | grep "sshd" | grep "Accepted password" |tr -s " "|tr " " "@" > /tmp/logsok.txt
 
     echo "Los intentos de conexion por ssh, hoy, esta semana y este mes han sido: \n"
     
