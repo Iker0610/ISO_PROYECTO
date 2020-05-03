@@ -15,9 +15,9 @@ EXE_PATH="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 # Colors for echo.
 # Use: printf "${ERROR}THIS IS AN ERROR MESSAGE IN RED ${NC}this is a normal message on default color\n"
 TITLE='\033[1;34m'
-ERROR='\033[0;31mERROR- \033[0m'
-OK='\033[0;32mOK- \033[0m'
-WARNING='\033[0;33mAVISO- \033[0m'
+ERROR='\033[1;31mERROR- \033[0m'
+OK='\033[1;32mOK- \033[0m'
+WARNING='\033[1;33mAVISO- \033[0m'
 NC='\033[0m' # No Color
 
 ############################################################
@@ -366,6 +366,7 @@ function instalarLibreriasPythonYAplicacion()
         # 2- Install packages
         # 3- Deactivate virtualenv
 
+        printf "Instalando librerias de python...\n\n"
         sudo su www-data -s /bin/bash <<EOF
         echo 'Activando el entorno virtual...'
         source /var/www/html/erraztest/python3envmetrix/bin/activate
@@ -381,24 +382,41 @@ EOF
         ########## INSTALL AND TEST APLICATION ##########
 
         # Copy application files to /var/www/html/erraztest/
-        echo 'Instalando aplicación en /var/www/html/erraztest/'
-        sudo cp ${EXE_PATH}/index.php /var/www/html/erraztest/
-        sudo cp ${EXE_PATH}/webprocess.sh /var/www/html/erraztest/
-        sudo cp ${EXE_PATH}/complejidadtextual.py /var/www/html/erraztest/
-        sudo cp ${EXE_PATH}/processing.gif /var/www/html/erraztest/
+        echo 'Instalando aplicación en /var/www/html/erraztest/ ...'
+        echo 'Copiando archivos...'
+        declare -i RESULT=0
+        sudo cp ${EXE_PATH}/index.php /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp ${EXE_PATH}/webprocess.sh /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp ${EXE_PATH}/complejidadtextual.py /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp ${EXE_PATH}/processing.gif /var/www/html/erraztest/ || RESULT+=$?
 
         # Copy english.doc.txt for test
-        sudo cp -r textos /var/www/html/erraztest/
+        sudo cp -r textos /var/www/html/erraztest/ || RESULT+=$?
 
-        # Give file ownership to www-data (user and group)
-        sudo chown -R www-data:www-data /var/www
+        if [ RESULT -eq 0 ]
+        then
+            printf "${OK}Archivos copiados \n\n"
 
-        echo 'Aplicación instalada correctamente'
+            # Give file ownership to www-data (user and group)
+            echo "Estableciendo www-data como propietario"
+            sudo chown -R www-data:www-data /var/www && printf "${OK}Propiedad traspasada a www-data \n\n"
 
-        # Test the application as www-data user
-        cd /var/www/html/erraztest/
-        sudo su www-data -s /bin/bash -c ./webprocess.sh textos/english.doc.txt
-        cd ${EXE_PATH}
+            printf "${OK}Aplicación instalada correctamente"
+
+            # Test the application as www-data user
+            printf "Testeando aplicación...\n\n"
+            cd /var/www/html/erraztest/
+            sudo su www-data -s /bin/bash -c ./webprocess.sh textos/english.doc.txt
+            if [ $? -eq 0 ]
+            then
+                printf "\n${OK}Aplicación probada correctamente \n"
+            else
+                printf "\n${ERROR}No se ha podido ejecutar la prueba \n"
+            fi
+            cd ${EXE_PATH}
+        else
+            printf "${ERROR}No se han podido copiar los ficheros a /var/www/html/erraztest/ \n"
+        fi
     else
         printf "${ERROR}No se han podido efectuar las instalaciones apropiadas \n"
     fi
@@ -428,11 +446,16 @@ function viendoLogs()
 	
 	archivo=/var/log/apache2/error.log #Save the path to the errors
 	
-	if [ -s $archivo ]  #if the file error.log exists and its size isn't 0
+	if [ -e $archivo ]  #if the file error.log exists and its size isn't 0
 	then
-	  tail $archivo #print the last 10 lines of the file
+	  tail -n 25 $archivo #print the last 25 lines of the file
 	else
-	  echo "El archivo no existe" #print "The file does not exist"
+        if [ -e $archivo ]
+        then
+            printf "No hay errores de Apache \n"
+        else
+          printf "${ERROR}El archivo /var/log/apache2/error.log no existe\n" #print "The file does not exist"
+	    fi
 	fi
 
 }
@@ -441,10 +464,9 @@ function viendoLogs()
 #       11) Controlar los intentos de conexión de ssh      #
 ###########################################################
 
-function gestionarlogs()
+function gestionarLogs()
 {
     printf "${TITLE}11 Controlar los intentos de conexión de ssh${NC}\n\n\n"
-
 
     touch /tmp/logscomprimidos.txt
     touch /tmp/logs.txt
@@ -457,7 +479,7 @@ function gestionarlogs()
 
     cat /var/log/auth.log > $archivoslogs
     cat /var/log/auth.log.0 > $archivoslogs
-    zcat ls auth.log.*.gz > $archivoscomprimidos
+    zcat `ls auth.log.*.gz` > $archivoscomprimidos
 
     cat $archivoslogs | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt #guardamos los fails en logsfail.txt separados por @
     cat $archivoscomprimidos | grep "sshd" | grep "Failed password" |tr ' '|tr ' ' '@' > /tmp/logsfail.txt
