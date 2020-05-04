@@ -429,7 +429,7 @@ EOF
         sudo cp "${EXE_PATH}/processing.gif" /var/www/html/erraztest/ || RESULT+=$?
 
         # Copy english.doc.txt for test
-        sudo cp -r textos /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp -r "${EXE_PATH}/textos" /var/www/html/erraztest/ || RESULT+=$?
 
         if [ ${RESULT} -eq 0 ]
         then
