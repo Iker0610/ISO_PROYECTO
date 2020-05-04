@@ -231,6 +231,8 @@ function phpInstall()
 {
     printf "${TITLE}5 Instalar el modulo php${NC}\n\n\n"
 
+    declare -i RESULT=0
+
     # Se comprueba si PHP está instalado
 	aux=$(aptitude show php | grep "State: installed")
 	aux2=$(aptitude show php | grep "Estado: instalado")
@@ -240,29 +242,48 @@ function phpInstall()
 	then
 	    # Si no lo está se instala
 		printf "Instalando PHP...\n\n"
-		sudo apt install php libapache2-mod-php
-		sudo apt install php-cli
-		sudo apt install php-cgi
+		sudo apt install php libapache2-mod-php || RESULT+=$?
+		sudo apt install php-cli || RESULT+=$?
+		sudo apt install php-cgi || RESULT+=$?
 
-		#Verify if the files exist
-		echo "Comprobando archivos..."
-		if [ ! -d /etc/apache2/mods-enabled/php7.2.conf ] && [ ! -d /etc/apache2/mods-enabled/php7.2.load ]
+		if [ $RESULT -eq 0 ] # Se comprueba la instalación
 		then
-			#Enable the module php
-			echo "Activando modulo PHP..."
-			a2enmod php7.2 && printf "${OK}Modulo PHP activado \n\n"
+		    printf "${OK}PHP instalado \n\n"
         else
-            printf "${ERROR}Los archivos requeridos para activar PHP no existen: /etc/apache2/mods-enabled/php7.2.conf y /etc/apache2/mods-enabled/php7.2.load \n\n"
-		fi
-		
-		#Restart Apache2
-		echo "Reiniciando Apache..."
-		sudo systemctl restart apache2.service && printf "${OK}Apache reiniciado \n\n"
+            print "${ERROR}No se ha podido instalar PHP \n\n"
+        fi
 
-		echo "Fin de la instalación de PHP"
 	else
-		printf "${OK}PHP ya está instalado \n"
+		printf "${OK}PHP ya está instalado \n\n"
 	fi
+
+    # Si PHP está instalado correctamente se activa
+    if [ $RESULT -eq 0 ]
+	then
+        #Verify if the files exist: If they do -> PHP is already enabled. Else PHP must be enabled
+        echo "Comprobando si el módulo PHP está activado..."
+        if [ ! -f /etc/apache2/mods-enabled/php7.*.conf ] && [ ! -f /etc/apache2/mods-enabled/php7.*.load ]
+        then
+            #Enable the module php
+            echo "El módulo PHP no está activado. Activándo módulo PHP..."
+            a2enmod php7.*
+
+            if [ $? -eq 0 ] # Se comprueba que haya ido bien
+            then
+                printf "${OK}Modulo PHP activado \n\n"
+            else
+                printf "${ERROR}No se ha podido activar el módulo PHP \n\n"
+            fi
+        else
+            printf "${OK}El modulo PHP ya está activado \n\n"
+        fi
+
+        #Restart Apache2
+        echo "Reiniciando Apache..."
+        sudo systemctl restart apache2.service && printf "${OK}Apache reiniciado \n\n"
+
+        echo "Fin de la instalación de PHP"
+    fi
 }
 
 ###########################################################
@@ -316,26 +337,43 @@ function crearEntornoVirtualPython3()
 	#	This way the application is able to have its own Python library versions
 	#	regardless the ones that are installed (or not) in the system
 
-    printf "${WARNING}Se empleará python3.6 en el entorno virtual si no se dispone de él se instalará"
-	printf "${WARNING}Es posible que en el proceso se instalen dependencias adicionales necesarias"
-	# Install the virtualenv
-	echo "Instalando virtualenv para Python..."
-	sudo apt-get install python-virtualenv virtualenv
-	if [ $? -eq 0 ]
-    then
-        printf "${OK}Virtualenv instalado correctamente \n\n"
+    printf "${WARNING}Se empleará python3.6 en el entorno virtual si no se dispone de él se instalará\n"
+	printf "${WARNING}Es posible que en el proceso se instalen dependencias adicionales necesarias\n\n"
 
+    declare -i RESULT=0
+
+	# Se comprueba si virtualenv está instalado
+	aux=$(aptitude show python-virtualenv virtualenv | grep "State: installed")
+	aux2=$(aptitude show python-virtualenv virtualenv | grep "Estado: instalado")
+	aux3=$aux$aux2
+
+	if [ -z "$aux3" ]
+	then
+        # Install the virtualenv
+        echo "Instalando virtualenv para Python..."
+        sudo apt-get install python-virtualenv virtualenv
+        if [ $? -eq 0 ]
+        then
+            printf "\n${OK}Virtualenv para python correctamente instalado \n\n"
+        else
+            printf "\n${ERROR}No se ha podido instalar virtualenv para python \n\n"
+            RESULT+=$?
+        fi
+    else
+        printf "\n${OK}Virtualenv para python ya está instalado \n\n"
+    fi
+
+	if [ $RESULT -eq 0 ]
+    then
         # Create a new virtual environment for Python3 in the folder: /var/www/html/erraztest
         echo "Creando entorno virtual en /var/www/html/erraztest/env..."
         sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
         if [ $? -eq 0 ]
         then
-            printf "${OK}Entono virtual creado en /var/www/html/erraztest/env \n"
+            printf "\n${OK}Entono virtual creado en /var/www/html/erraztest/env \n"
         else
             printf "${ERROR}No se ha podido crear el entorno virtual en /var/www/html/erraztest/env \n"
         fi
-    else
-        printf "${ERROR}No se ha podido instalar virtualenv \n"
     fi
 }
 
@@ -356,7 +394,7 @@ function instalarLibreriasPythonYAplicacion()
 	# Check if everything went OK
     if [ $? -eq 0 ]
     then
-        printf "${OK}pip y dos2unix instalados correctamente en el sistema \n\n"
+        printf "\n${OK}pip y dos2unix instalados correctamente en el sistema \n\n"
 
         # Give file ownership to www-data (user and group)
         sudo chown -R www-data:www-data /var/www
@@ -384,16 +422,16 @@ EOF
         # Copy application files to /var/www/html/erraztest/
         echo 'Instalando aplicación en /var/www/html/erraztest/ ...'
         echo 'Copiando archivos...'
-        declare -i RESULT=0
-        sudo cp ${EXE_PATH}/index.php /var/www/html/erraztest/ || RESULT+=$?
-        sudo cp ${EXE_PATH}/webprocess.sh /var/www/html/erraztest/ || RESULT+=$?
-        sudo cp ${EXE_PATH}/complejidadtextual.py /var/www/html/erraztest/ || RESULT+=$?
-        sudo cp ${EXE_PATH}/processing.gif /var/www/html/erraztest/ || RESULT+=$?
+        declare RESULT=0
+        sudo cp "${EXE_PATH}/index.php" /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp "${EXE_PATH}/webprocess.sh" /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp "${EXE_PATH}/complejidadtextual.py" /var/www/html/erraztest/ || RESULT+=$?
+        sudo cp "${EXE_PATH}/processing.gif" /var/www/html/erraztest/ || RESULT+=$?
 
         # Copy english.doc.txt for test
         sudo cp -r textos /var/www/html/erraztest/ || RESULT+=$?
 
-        if [ RESULT -eq 0 ]
+        if [ ${RESULT} -eq 0 ]
         then
             printf "${OK}Archivos copiados \n\n"
 
