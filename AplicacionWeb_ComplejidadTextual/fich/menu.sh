@@ -630,6 +630,12 @@ function fin()
 	if [ $respuesta == "N" ]
 	then
 		opcionmenuppal=0
+	else
+		printf "${OK}Gracias, Agur!\n"
+		printf "Iria San Miguel\n"
+		printf "Vanessa Borst\n"
+		printf "Iker de la Iglesia\n"
+		printf "Alexander Platas\n"
 	fi
 }
 
