@@ -580,20 +580,23 @@ function gestionarLogsSSH()
 		cat /var/log/auth.log >> $archivoslogs
 
 		# Get SSH's password failed or accepted lines and save them in logsSSHProcesados.txt
+		# With egrep -a "Failed password|Accepted password" the program takes any line that has Failed password or Accepted password
+		# tr -s " " we delete duplicated blank spaces and with tr " " "@" we replace blank spaces with @
 		cat ${archivoslogs} | grep -a "sshd" | egrep -a "Failed password|Accepted password" | tr -s " "| tr " " "@" >> /tmp/logsSSHProcesados.txt
 
-		if [ -s "/tmp/logsSSHProcesados.txt" ]
+		if [ -s "/tmp/logsSSHProcesados.txt" ] # If it has lines it prints them.
 		then
 			printf "Intentos de conexion por ssh:\n${WARNING}(De más antiguos a más recientes) \n\n"
 			sleep 1
 
-			# Print the fails
+			# Loop for each file's lines
 			for linea in `less /tmp/logsSSHProcesados.txt`
 			do
-				#The words are separated by @ and we take the field wanted for usuario and fecha
+				#The words are separated by @ and we take the field wanted for usuario and fecha. We change @ with black spaces.
 				usuario=`echo ${linea} | cut -d "@" -f9 | tr "@" " "`
 				fecha=`echo ${linea} | cut -d "@" -f1,2,3 | tr "@" " "`
 
+				# Check if it's an access fail or if the access succeded and show that with the correct format
 				ESTADO=`echo ${linea} | grep "Failed@password"`
 				if [ -z "${ESTADO}" ]
 				then
