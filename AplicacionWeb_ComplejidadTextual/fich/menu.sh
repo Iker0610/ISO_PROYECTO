@@ -399,10 +399,11 @@ function crearEntornoVirtualPython3()
 	else
 		printf "\n${OK}Virtualenv para python ya está instalado \n\n"
 	fi
+	sleep 1
 
 	if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 	then
-		# Create a new virtual environment for Python3 in the folder: /var/www/html/erraztest
+		# Create a new virtual environment for Python3 in the folder: /var/www/html/erraztest called python3envmetrix
 		echo "Creando entorno virtual en /var/www/html/erraztest/env..."
 		sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
 		if [ $? -eq 0 ] # Check if last command succeded
@@ -412,6 +413,7 @@ function crearEntornoVirtualPython3()
 			printf "${ERROR}No se ha podido crear el entorno virtual en /var/www/html/erraztest/env \n"
 		fi
 	fi
+	sleep 1
 }
 
 
@@ -444,6 +446,7 @@ function instalarLibreriasPythonYAplicacion()
 		# 3- Deactivate virtualenv
 
 		# <<EOF passes the next lines untill the last EOF as a file (it's equal to create a new .sh file)
+		# THE LAST EOF CAN'T BE INDENTED
 		sudo su www-data -s /bin/bash <<EOF
 			echo 'Activando el entorno virtual...'
 			source /var/www/html/erraztest/python3envmetrix/bin/activate && printf '\e[1;32mOK- \e[0mEntorno virtual python3envmetrix activado\n\n'
@@ -473,9 +476,11 @@ EOF
 		then
 			printf "${OK}Archivos copiados \n\n"
 
+
 			# Give file ownership to www-data (user and group)
-			echo "Estableciendo www-data como propietario"
-			sudo chown -R www-data:www-data /var/www && printf "${OK}Propiedad traspasada a www-data \n\n"
+			echo "Estableciendo www-data como propietario..."
+
+			sudo chown -R www-data:www-data /var/www && sudo chmod u+x g+x /var/www/html/erraztest/webprocess.sh && printf "${OK}Propiedad traspasada a www-data \n\n"
 
 			printf "${OK}Aplicación instalada correctamente \n\n"
 			sleep 1
@@ -515,6 +520,7 @@ function visualizarAplicacion()
 
 	printf "${WARNING}Se abrirá Firefox para visualizar la aplicación... \n"
 	sleep 1
+
 	echo "Abriendo con firefox..."
 	firefox http://127.0.0.1:8080/index.php  || prinf "${ERROR}Parece que no se ha podido iniciar firefox... \n"
 }
@@ -532,15 +538,18 @@ function verLogsApache()
 
 	if [ -s $archivo ]  #if the file error.log exists and its size isn't 0
 	then
+		printf "${OK}Se van a mostrar los últimos 35 logs de Apache \n\n"
+		sleep 1
 		tail -n 35 $archivo #print the last 35 lines of the file
 	else
 		if [ -e $archivo ] # if the file exists
 		then
-			printf "No hay errores de Apache \n"
+			printf "${OK}No hay errores de Apache \n"
 		else
 			printf "${ERROR}El archivo /var/log/apache2/error.log no existe\n" #print "The file does not exist"
 		fi
 	fi
+	sleep 1
 }
 
 
@@ -562,18 +571,21 @@ function gestionarLogsSSH()
 		printf "${WARNING}SSH no está instalado por lo que no se pueden gestionar los logs \n"
 
 	else
+		# If SSH is installed we check the logs
 		archivoslogs="/tmp/logsSSH.txt"
 
+		# Copy every log in /tmp/logsSSH.txt
 		zcat /var/log/auth.log.*.gz > $archivoslogs
 		cat /var/log/auth.log.1 >> $archivoslogs
 		cat /var/log/auth.log >> $archivoslogs
 
+		# Get SSH's password failed or accepted lines and save them in logsSSHProcesados.txt
 		cat ${archivoslogs} | grep -a "sshd" | egrep -a "Failed password|Accepted password" | tr -s " "| tr " " "@" >> /tmp/logsSSHProcesados.txt
 
 		if [ -s "/tmp/logsSSHProcesados.txt" ]
 		then
 			printf "Intentos de conexion por ssh:\n${WARNING}(De más antiguos a más recientes) \n\n"
-			sleep 2
+			sleep 1
 
 			# Print the fails
 			for linea in `less /tmp/logsSSHProcesados.txt`
