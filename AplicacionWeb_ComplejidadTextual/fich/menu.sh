@@ -206,7 +206,7 @@ function createvirtualhost()
 
 	# 4.2 Restart Apache
 	sudo service apache2 restart
-	RESULT+=c
+	RESULT+=$?
 
 	if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 	then
@@ -631,11 +631,11 @@ function fin()
 	then
 		opcionmenuppal=0
 	else
-		printf "${OK}Gracias, Agur!\n"
-		printf "Iria San Miguel\n"
-		printf "Vanessa Borst\n"
-		printf "Iker de la Iglesia\n"
-		printf "Alexander Platas\n"
+		printf "\n${OK}Gracias, Agur!\n\n"
+		printf "- Iria San Miguel\n"
+		printf "- Vanessa Borst\n"
+		printf "- Iker de la Iglesia\n"
+		printf "- Alexander Platas\n"
 	fi
 }
 
