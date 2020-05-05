@@ -3,6 +3,7 @@
 ##Instalacion y Mantenimiento de una Aplicacion Web
 #Importar funciones de otros ficheros
 
+
 ############################################################
 #                      GLOBAL VARIABLES                    #
 ############################################################
@@ -29,13 +30,17 @@ function desinstalar()
 {
 	printf "${TITLE}0 Desinstalar${NC}\n\n\n"
 
+	# Stop Apache
 	sudo service apache2 stop
 	sudo apt-get update
-	#Then uninstall Apache2 and its dependent packages. Use purge option instead of remove with apt-get command. The former option will try to remove dependent packages, as well as any configuration files created by them. In addition, use autoremove option as well, to remove any other dependencies that were installed with Apache2, but are no longer used by any other package.
+
+	# Then uninstall Apache2 and its dependent packages. Use purge option instead of remove with apt-get command. The former option will try to remove dependent packages, as well as any configuration files created by them. In addition, use autoremove option as well, to remove any other dependencies that were installed with Apache2, but are no longer used by any other package.
 	sudo apt-get purge apache2 apache2-utils apache2-data
-	#paquetes sugeridos: apache2-doc apache2-suexec-pristine | apache2-suexec-custom
+
+	# Paquetes sugeridos: apache2-doc apache2-suexec-pristine | apache2-suexec-custom
 	sudo apt-get purge php libapache2-mod-php*
-	#
+	
+	# Clear dependecies and application folder
 	sudo apt-get autoremove
 	sudo rm -rf /var/www/html/*
 }
@@ -54,9 +59,10 @@ function apacheInstall()
 	aux2=$(aptitude show apache2 | grep "Estado: instalado")
 	aux3=$aux$aux2
 
-	if [ -z "$aux3" ]
+	if [ -z "$aux3" ] # Install it if it isn't installed
 	then
 		echo "Instalando ..."
+		sudo apt update
 		sudo apt-get install apache2 && printf "${OK} Instalación de Apache completada \n\n"
 	else
 		printf "${OK}Apache ya estaba instalado \n"
@@ -77,33 +83,40 @@ function webApacheTest()
 
 	if [ -z "$aux" ]
 	then
-		echo "Starting apache ..."
+		echo "Iniciando apache ..."
 		sudo service apache2 start && printf "${OK}Apache started \n\n"
 	else
 		printf "${OK}Apache is already running \n\n"
 	fi
 	sleep 1
 
+
 	# 2. Testear si el servicio apache2 está escuchando por el puerto 80
 
 	# 2.1 Instalar el paquete que contiene netstat en caso de no estar instalado.
 	aux=$(dpkg -s net-tools | grep "installed")
 	# dpkg-query -W -f='${Status}' net-tools 2>/dev/null | grep -c "ok installed" => returns 1 (installed) or 0 (not installed)
-	if [ -z "$aux" ]
+	
+	if [ -z "$aux" ] # if isn't installed install it
 	then
 		echo "Installing net-tools ..." #contains the netstat command
+		sudo apt update
 		sudo apt-get install net-tools && printf "${OK}net-tools successfully installed \n\n"
 	else
 		printf "${OK}net-tools is already installed \n\n"
 	fi
 	sleep 1
 
+
 	#2.2 Saber el puerto por que está escuchando Apache/ Testear si el puerto está 80
 	puerto=$(sudo netstat -anp | grep apache| grep "0 :::80")
+
 	if [ ! -z "$puerto" ]
 	then
 		printf "${OK}Apache is listening to port 80... \n\n"
-		printf "${WARNING}To check if the default page “index.html” which is located in /var/www/html is displayed correctly, firefox will be opened... \n\n"
+
+		printf "${WARNING}To check if the default page “index.html” which is located in /var/www/html is displayed correctly, firefox will be opened... \n"
+		sleep 1
 		echo "Abriendo Firefox..."
 		firefox http://127.0.0.1 || prinf "${ERROR}Parece que no se ha podido iniciar firefox... \n"
 	else
@@ -122,11 +135,12 @@ function createvirtualhost()
 	printf "${TITLE}3 Crear Virtual Host${NC}\n\n\n"
 
 	# Step 1: Create the directory that will host the website
-	echo 'Creando directorio /var/www/html/erraztest'
+	echo 'Creando directorio /var/www/html/erraztest...'
 	if [ ! -d "/var/www/html/erraztest" ]
 	then
 		sudo mkdir /var/www/html/erraztest
-		if [ $? -eq 0 ]
+
+		if [ $? -eq 0 ] # Check if last command succeded
 		then
 			printf "${OK}El directorio ha sido creado correctamente. \n\n"
 		else
@@ -135,16 +149,19 @@ function createvirtualhost()
 	else
 		printf "${OK}El directorio ya existía. \n\n"
 	fi
+	sleep 1
+
 
 	# Step 2: Create the configuration file for the new virtual host
 	echo "Creando el virtual host de Apache en el puerto 8080..."
 
-	declare -i RESULT=0
+	declare -i RESULT=0 # Variable to check if a group of commands succeded
+
 	# 2.1 Use the default config and edit it afterwards
 	sudo cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/erraztest.conf
 	RESULT+=$?
 
-	# 2.2 	Adapt the new config files to our needs
+	# 2.2 Adapt the new config files to our needs
 	#	For editing a file by bash the sed command can be used, where sed is a stream editor
 	# 	In more detail, the sed's 'substitute' command can be used, which uses the following syntax: ‘s/regexp/replacement/flags’
 	# 	=> Helpful flag: g (apply the replacement to all matches to the regexp, not just the first)
@@ -187,16 +204,17 @@ function createvirtualhost()
 	sudo a2ensite erraztest.conf
 	RESULT+=$?
 
-	# 4.2 Restart Apache	
+	# 4.2 Restart Apache
 	sudo service apache2 restart
 	RESULT+=c
 
-	if [ ${RESULT} -eq 0 ]
+	if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 	then
 		printf "${OK}Se ha creado el virtual host correctamente. \n\n"
 	else
 		printf "${ERROR}Ha sucedido un problema en el proceso de creación del virtual host. \n\n"
 	fi
+	sleep 1
 }
 
 
@@ -222,7 +240,8 @@ function webVirtualApacheTest()
 	sleep 1
 
 	# Step 3: To check if the default page “index.html” which is located in /var/www/html/erraztest is displayed correctly, open the navigation with "firefox http://127.0.0.1:8080 "
-	printf "${WARNING}To check if the default page “index.html” which is located in /var/www/html/erraztest is displayed correctly, firefox will be opened... \n\n"
+	printf "${WARNING}To check if the default page “index.html” which is located in /var/www/html/erraztest is displayed correctly, firefox will be opened... \n"
+	sleep 1
 	echo "Abriendo Firefox..."
 	firefox http://127.0.0.1:8080 || prinf "${ERROR}Parece que no se ha podido iniciar firefox... \n"
 }
@@ -236,9 +255,9 @@ function phpInstall()
 {
 	printf "${TITLE}5 Instalar el modulo php${NC}\n\n\n"
 
-	declare -i RESULT=0
+	declare -i RESULT=0 # Variable to check if a group of commands succeded
 
-	# Se comprueba si PHP está instalado
+	# Check if PHP is already installed
 	aux=$(aptitude show php | grep "State: installed")
 	aux2=$(aptitude show php | grep "Estado: instalado")
 	aux3=$aux$aux2
@@ -247,23 +266,25 @@ function phpInstall()
 	then
 		# Si no lo está se instala
 		printf "Instalando PHP...\n\n"
+		sudo apt update
 		sudo apt install php libapache2-mod-php || RESULT+=$?
 		sudo apt install php-cli || RESULT+=$?
 		sudo apt install php-cgi || RESULT+=$?
 
-		if [ $RESULT -eq 0 ] # Se comprueba la instalación
+		if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 		then
 			printf "${OK}PHP instalado \n\n"
 		else
-			print "${ERROR}No se ha podido instalar PHP \n\n"
+			printf "${ERROR}No se ha podido instalar PHP \n\n"
 		fi
 
 	else
 		printf "${OK}PHP ya está instalado \n\n"
 	fi
+	sleep 1
 
 	# Si PHP está instalado correctamente se activa
-	if [ $RESULT -eq 0 ]
+	if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 	then
 		#Verify if the files exist: If they do -> PHP is already enabled. Else PHP must be enabled
 		echo "Comprobando si el módulo PHP está activado..."
@@ -273,7 +294,7 @@ function phpInstall()
 			echo "El módulo PHP no está activado. Activándo módulo PHP..."
 			a2enmod php7.*
 
-			if [ $? -eq 0 ] # Se comprueba que haya ido bien
+			if [ $? -eq 0 ] # Check if last command succeded
 			then
 				printf "${OK}Modulo PHP activado \n\n"
 			else
@@ -282,12 +303,14 @@ function phpInstall()
 		else
 			printf "${OK}El modulo PHP ya está activado \n\n"
 		fi
+		sleep 1
 
 		#Restart Apache2
 		echo "Reiniciando Apache..."
 		sudo systemctl restart apache2.service && printf "${OK}Apache reiniciado \n\n"
 
 		echo "Fin de la instalación de PHP"
+		sleep 1
 	fi
 }
 
@@ -300,34 +323,37 @@ function phpTest()
 {
 	printf "${TITLE}6 Testear PHP${NC}\n\n\n"
 
+	# Create test.php in order to test PHP
 	echo "Creando fichero test.php..."
 	sudo /bin/bash -c 'echo "<?php phpinfo(); ?>" >>/var/www/html/erraztest/test.php'
 
 	# Se compruba que se haya creado el fichero
-	if [ $? -eq 0 ]
+	if [ $? -eq 0 ] # Check if last command succeded
 	then
 		printf "${OK}test.php creado correctamente \n\n"
+		sleep 1
 
 		#test.php y index.html:
-		#Nos aseguranmos que tienen el mismo propietario
-		echo "Comprobando propietarios..."
+		#Nos aseguramos que tienen el mismo propietario
+		echo "Estableciendo propietarios..."
 		propietarioHTML=$(stat --format %U /var/www/html/erraztest/index.html)
 		sudo chown $propietarioHTML /var/www/html/erraztest/test.php
 
 		#Nos aseguramos que tienen los mismos permisos:
-		echo "Comprobando permisos..."
+		echo "Estableciendo permisos..."
 		permisosHTML=$(stat --format %a /var/www/html/erraztest/index.html)
 		sudo chmod $permisosHTML /var/www/html/erraztest/test.php
-
-		echo ''
+		sleep 1
 
 		#Abrimos el test.php con el navegador
-		printf "${WARNING}Se abrirá Firefox para comprobar PHP... \n\n"
+		printf "\n${WARNING}Se abrirá Firefox para comprobar PHP... \n"
+		sleep 1
 		echo "Abriendo con firefox..."
 		firefox http://127.0.0.1:8080/test.php  || prinf "${ERROR}Parece que no se ha podido iniciar firefox... \n"
 
 	else
 		printf "${ERROR}No se ha podido crear test.php. \n"
+		sleep 1
 	fi
 }
 
@@ -340,14 +366,14 @@ function crearEntornoVirtualPython3()
 {
 	printf "${TITLE}7 Crear un entorno virtual para Python3${NC}\n\n\n"
 
-	# Post:	This function creates a new Python3 environment in /var/www/html/erraztest
+	# Post: This function creates a new Python3 environment in /var/www/html/erraztest
 	#	This way the application is able to have its own Python library versions
 	#	regardless the ones that are installed (or not) in the system
 
 	printf "${WARNING}Se empleará python3.6 en el entorno virtual si no se dispone de él se instalará\n"
 	printf "${WARNING}Es posible que en el proceso se instalen dependencias adicionales necesarias\n\n"
 
-	declare -i RESULT=0
+	declare -i RESULT=0 # Variable to check if a group of commands succeded
 
 	# Se comprueba si virtualenv está instalado
 	aux=$(aptitude show python-virtualenv virtualenv | grep "State: installed")
@@ -358,24 +384,28 @@ function crearEntornoVirtualPython3()
 	then
 		# Install the virtualenv
 		echo "Instalando virtualenv para Python..."
-		sudo apt-get install python-virtualenv virtualenv
-		if [ $? -eq 0 ]
+		sudo apt update
+		sudo apt install python-virtualenv virtualenv
+
+		if [ $? -eq 0 ] # Check if last command succeded
 		then
 			printf "\n${OK}Virtualenv para python correctamente instalado \n\n"
+
 		else
-		printf "\n${ERROR}No se ha podido instalar virtualenv para python \n\n"
-		RESULT+=$?
+			printf "\n${ERROR}No se ha podido instalar virtualenv para python \n\n"
+			RESULT+=$?
 		fi
+
 	else
 		printf "\n${OK}Virtualenv para python ya está instalado \n\n"
 	fi
 
-	if [ $RESULT -eq 0 ]
+	if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 	then
 		# Create a new virtual environment for Python3 in the folder: /var/www/html/erraztest
 		echo "Creando entorno virtual en /var/www/html/erraztest/env..."
 		sudo virtualenv /var/www/html/erraztest/python3envmetrix --python=python3
-		if [ $? -eq 0 ]
+		if [ $? -eq 0 ] # Check if last command succeded
 		then
 			printf "\n${OK}Entono virtual creado en /var/www/html/erraztest/env \n"
 		else
@@ -397,11 +427,13 @@ function instalarLibreriasPythonYAplicacion()
 
 	# Install necesary Ubuntu packages: dos2unix and pip3
 	echo 'Instalando pip y dos2unix...'
-	sudo apt install dos2unix python3-pip	# Install dos2unix
-	# Check if everything went OK
-	if [ $? -eq 0 ]
+	sudo apt update
+	sudo apt install dos2unix python3-pip # Install dos2unix
+	
+	if [ $? -eq 0 ] # Check if last command succeded
 	then
-		printf "\n${OK}pip y dos2unix instalados correctamente en el sistema \n\n"
+		printf "${OK}pip y dos2unix instalados correctamente en el sistema \n\n"
+		sleep 1
 
 		# Give file ownership to www-data (user and group)
 		sudo chown -R www-data:www-data /var/www
@@ -411,26 +443,24 @@ function instalarLibreriasPythonYAplicacion()
 		# 2- Install packages
 		# 3- Deactivate virtualenv
 
-		printf "Instalando librerias de python...\n\n"
-
+		# <<EOF passes the next lines untill the last EOF as a file (it's equal to create a new .sh file)
 		sudo su www-data -s /bin/bash <<EOF
-		echo 'Activando el entorno virtual...'
-		source /var/www/html/erraztest/python3envmetrix/bin/activate
-		echo 'Instalando librerías de python...'
-		pip3 install numpy
-		pip3 install nltk
-		pip3 install argparse
-		echo 'Instalación completada'
-		echo 'Desactiando entorno virtual'
-		deactivate
+			echo 'Activando el entorno virtual...'
+			source /var/www/html/erraztest/python3envmetrix/bin/activate && printf '\e[1;32mOK- \e[0mEntorno virtual python3envmetrix activado\n\n'
+			echo 'Instalando librerías de python...'
+			pip3 install numpy && pip3 install nltk && pip3 install argparse && printf '\e[1;32mOK- \e[0mInstalación completada\n\n'
+			echo 'Desactivando entorno virtual...'
+			deactivate && printf '\e[1;32mOK- \e[0mEntorno virtual desactivado\n\n'
 EOF
+		sleep 1
 
 		########## INSTALL AND TEST APLICATION ##########
 
 		# Copy application files to /var/www/html/erraztest/
-		echo 'Instalando aplicación en /var/www/html/erraztest/ ...'
+		printf 'Instalando aplicación en /var/www/html/erraztest/ ...\n\n'
+		
 		echo 'Copiando archivos...'
-		declare RESULT=0
+		declare -i RESULT=0 # Variable to check if a group of commands succeded
 		sudo cp "${EXE_PATH}/index.php" /var/www/html/erraztest/ || RESULT+=$?
 		sudo cp "${EXE_PATH}/webprocess.sh" /var/www/html/erraztest/ || RESULT+=$?
 		sudo cp "${EXE_PATH}/complejidadtextual.py" /var/www/html/erraztest/ || RESULT+=$?
@@ -439,7 +469,7 @@ EOF
 		# Copy english.doc.txt for test
 		sudo cp -r "${EXE_PATH}/textos" /var/www/html/erraztest/ || RESULT+=$?
 
-		if [ ${RESULT} -eq 0 ]
+		if [ ${RESULT} -eq 0 ] # Check if previous commands succeded
 		then
 			printf "${OK}Archivos copiados \n\n"
 
@@ -447,25 +477,31 @@ EOF
 			echo "Estableciendo www-data como propietario"
 			sudo chown -R www-data:www-data /var/www && printf "${OK}Propiedad traspasada a www-data \n\n"
 
-			printf "${OK}Aplicación instalada correctamente"
+			printf "${OK}Aplicación instalada correctamente \n\n"
+			sleep 1
 
 			# Test the application as www-data user
-			printf "Testeando aplicación...\n\n"
+			printf "Testeando aplicación...\n"
+
 			cd /var/www/html/erraztest/
-			sudo su www-data -s /bin/bash -c ./webprocess.sh textos/english.doc.txt
-			if [ $? -eq 0 ]
+			sudo su www-data -s /bin/bash -c './webprocess.sh ./textos/english.doc.txt'
+			
+			if [ $? -eq 0 ] # Check if last command succeded
 			then
-				printf "\n${OK}Aplicación probada correctamente \n"
+				printf "${OK}Aplicación probada correctamente \n"
 			else
-				printf "\n${ERROR}No se ha podido ejecutar la prueba \n"
+				printf "${ERROR}No se ha podido ejecutar la prueba \n"
 			fi
-			cd ${EXE_PATH}
+			cd "${EXE_PATH}"
+
 		else
 			printf "${ERROR}No se han podido copiar los ficheros a /var/www/html/erraztest/ \n"
 		fi
-		else
-			printf "${ERROR}No se han podido efectuar las instalaciones apropiadas \n"
-		fi
+
+	else
+		printf "${ERROR}No se han podido efectuar las instalaciones apropiadas \n"
+	fi
+	sleep 1
 }
 
 
@@ -477,7 +513,8 @@ function visualizarAplicacion()
 {
 	printf "${TITLE}9 Visualizar la aplicación${NC}\n\n\n"
 
-	printf "${WARNING}Se abrirá Firefox para visualizar la aplicación... \n\n"
+	printf "${WARNING}Se abrirá Firefox para visualizar la aplicación... \n"
+	sleep 1
 	echo "Abriendo con firefox..."
 	firefox http://127.0.0.1:8080/index.php  || prinf "${ERROR}Parece que no se ha podido iniciar firefox... \n"
 }
@@ -536,7 +573,7 @@ function gestionarLogsSSH()
 		if [ -s "/tmp/logsSSHProcesados.txt" ]
 		then
 			printf "Intentos de conexion por ssh:\n${WARNING}(De más antiguos a más recientes) \n\n"
-			sleep 3
+			sleep 2
 
 			# Print the fails
 			for linea in `less /tmp/logsSSHProcesados.txt`
@@ -578,7 +615,7 @@ function fin()
 	if [ $respuesta == "N" ]
 	then
 		opcionmenuppal=0
-	fi	
+	fi
 }
 
 
@@ -608,20 +645,20 @@ do
 	read -p "Elige una opcion: " opcionmenuppal
 	printf "\n\n----------------------------------------\n\n"
 	case $opcionmenuppal in
-	0) desinstalar;;
-			1) apacheInstall;;
-			2) webApacheTest;;
-			3) createvirtualhost;;
-			4) webVirtualApacheTest;;
-			5) phpInstall;;
-			6) phpTest;;
-			7) crearEntornoVirtualPython3;;
-			8) instalarLibreriasPythonYAplicacion;;
-			9) visualizarAplicacion;;
-			10) verLogsApache;;
-			11) gestionarLogsSSH;;
-			12) fin;;
-			*) ;;
+		0) desinstalar;;
+		1) apacheInstall;;
+		2) webApacheTest;;
+		3) createvirtualhost;;
+		4) webVirtualApacheTest;;
+		5) phpInstall;;
+		6) phpTest;;
+		7) crearEntornoVirtualPython3;;
+		8) instalarLibreriasPythonYAplicacion;;
+		9) visualizarAplicacion;;
+		10) verLogsApache;;
+		11) gestionarLogsSSH;;
+		12) fin;;
+		*) ;;
 	esac
 	printf "\n----------------------------------------\n\n"
 done
