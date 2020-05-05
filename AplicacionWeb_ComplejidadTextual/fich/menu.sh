@@ -632,10 +632,10 @@ function fin()
 		opcionmenuppal=0
 	else
 		printf "\n${OK}Gracias, Agur!\n\n"
-		printf "- Iria San Miguel\n"
-		printf "- Vanessa Borst\n"
-		printf "- Iker de la Iglesia\n"
-		printf "- Alexander Platas\n"
+		printf "Iria San Miguel\n"
+		printf "Vanessa Borst\n"
+		printf "Iker de la Iglesia\n"
+		printf "Alexander Platas\n"
 	fi
 }
 
