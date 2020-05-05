@@ -480,7 +480,7 @@ EOF
 			# Give file ownership to www-data (user and group)
 			echo "Estableciendo www-data como propietario..."
 
-			sudo chown -R www-data:www-data /var/www && sudo chmod u+x g+x /var/www/html/erraztest/webprocess.sh && printf "${OK}Propiedad traspasada a www-data \n\n"
+			sudo chown -R www-data:www-data /var/www && sudo chmod u+x,g+x /var/www/html/erraztest/webprocess.sh && printf "${OK}Propiedad traspasada a www-data \n\n"
 
 			printf "${OK}Aplicación instalada correctamente \n\n"
 			sleep 1
